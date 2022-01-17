@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,6 +18,38 @@ import javax.validation.constraints.NotEmpty;
 public class MemberApiController {
 
     private final MemberService memberService;
+
+    @GetMapping("/api/v1/members")
+    public List<Member> membersV1() {
+        // orders를 @JsonIgnore로 뺄 수 있지만 다른 api들에서도 빠지게 돼서 문제 발생.
+        // Entity에 presentation 계층을 위환 로직이 추가된다.
+        // 모든 api에 대응 불가능.
+        // array 형태로 넘어간다. -> 내용 추가 불가능! (ex. count 추가하기) 유연성이 낮아진다.
+        return memberService.findMembers();
+    }
+    // dto를 만드는 것은 필수!
+    @GetMapping("/api/v2/members")
+    public Result membersV2() {
+        List<Member> findMembers = memberService.findMembers();
+        List<MemberDto> collect = findMembers.stream()
+                .map(m -> new MemberDto(m.getName()))
+                .collect(Collectors.toList());
+
+        return new Result(collect.size(), collect);
+    }
+
+    @Data
+    @AllArgsConstructor
+    static class Result<T> {
+        private int count;
+        private T data;
+    }
+
+    @Data
+    @AllArgsConstructor
+    static class MemberDto {
+        private String name;
+    }
 
     // Entity 바로 받는 것 수정할 예정
     @PostMapping("/api/v1/members")
