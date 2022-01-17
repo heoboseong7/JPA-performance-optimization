@@ -47,8 +47,9 @@ public class MemberService {
      */
     @Transactional
     public void update(Long id, String name) {
-        Member member = memberRepository.findOne(id);
-        member.setName(name);
+        Member member = memberRepository.findOne(id); // 영속성 context에서 가져옴.
+        member.setName(name); // name 값 변경.
+        // transaction이 종료되고 commit되는 시점에서 JPA가 변경감지 실행 -> update 쿼리 전송
     }
 
 }
