@@ -1,13 +1,18 @@
 package jpabook.jpashop.api;
 
+import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.Order;
+import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Order
@@ -37,5 +42,53 @@ public class OrderSimpleApiController {
         }
         // 반환된 데이터의 구조가 너무 복잡하다. 특히 Entity가 변경되는 경우 그리고 이미 사용되는 경우 문제가 많아진다.
         return all;
+    }
+
+    @GetMapping("/api/v2/simple-orders")
+    public List<SimpleOrderDto> ordersV2() {
+        // api 스펙에 딱 맞는 형태 v1보다 구조가 더 간단하다.
+        // ORDER 2개
+        // 1 + 회원 N + 배송 N (최악의 경우)
+        // 지연로딩은 영속성 컨텍스트를 먼저 조회하고 없으면 쿼리를 통해 조회하기 때문에 모든 경우에 쿼리 발생하는 것은 아니다.
+        List<Order> orders = orderRepository.findAllByString(new OrderSearch());
+        List<SimpleOrderDto> result = orders.stream()
+                //.map(o -> new SimpleOrderDto(o))
+                .map(SimpleOrderDto::new)
+                .collect(Collectors.toList());
+        // v1과 마찬가지로 LAZY 로딩으로 인한 많은 쿼리 발생. 각 루프별로 member, delivery 조회 쿼리 발생
+        // Order -> SQL 1번 -> 결과 주문 수 2개
+        // Order 하나마다 지연 로딩으로 인한 여러개의 쿼리 발생 -> N + 1(1 + N) 문제
+        // EAGER 로 바꿔도 해결이 되지 않는다.
+        // 원래는 이대로 반환하면 안됨. data로 감싸줘야 한다.
+        return result;
+    }
+
+    @GetMapping("/api/v3/simple-orders")
+    public List<SimpleOrderDto> ordersV3() {
+        List<Order> orders = orderRepository.findAllWithMemberDelivery();
+        // fetch join 으로 이미 조회된 상태이기 때문에 지연 로딩이 발생되지 않는다.
+        List<SimpleOrderDto> result = orders.stream()
+                .map(o -> new SimpleOrderDto(o))
+                .collect(Collectors.toList());
+
+        return result;
+    }
+
+    @Data
+    static class SimpleOrderDto {
+        private Long orderId;
+        private String name;
+        private LocalDateTime orderDate;
+        private OrderStatus orderStatus;
+        private Address address;
+
+        // DTO에서 Entity를 바로 받는 것은 문제가 안된다.
+        public SimpleOrderDto(Order order) {
+            orderId = order.getId();
+            name = order.getMember().getName(); // LAZY 초기화 영속성 컨텍스트에서 탐색, 없으면 쿼리로 조회
+            orderDate = order.getOrderDate();
+            orderStatus = order.getStatus();
+            address = order.getDelivery().getAddress();
+        }
     }
 }

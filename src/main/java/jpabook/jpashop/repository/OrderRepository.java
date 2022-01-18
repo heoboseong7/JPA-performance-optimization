@@ -101,12 +101,18 @@ public class OrderRepository {
         return query.getResultList();
     }
 
+    // fetch join을 이용한 N+1 문제 해결
+    // Order, Member, Delivery를 join해서 한번에 가져온다.
+    // fetch 는 JPA만 있는 문법이다.
+    // fetch join 은 자주 사용되기 때문에 깊이있게 이해하는 것이 중요하다.
+    // 성능 문제의 90%는 이 문제에 해당된다.
     public List<Order> findAllWithMemberDelivery() {
         return em.createQuery(
                 "select o from Order o" +
                         " join fetch o.member m" +
-                        " join fetch o.delivery d", Order.class)
-                .getResultList();
+                        " join fetch o.delivery d", Order.class
+        ).getResultList();
+
     }
 
     public List<Order> findAllWithItem() {
