@@ -23,10 +23,12 @@ public class Order {
     @Column(name = "order_id")
     private Long id;
 
+    // 지연로딩 때문에 member를 가져오지 않고 Member를 상속 받은 ProxyMember를 넣어둔다.
+    // Member를 건드릴 때 db에서 member를 가져온다. -> 프록시 초기
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
-
+    // 일대다는 기본적으로 LAZY
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems = new ArrayList<>();
 
