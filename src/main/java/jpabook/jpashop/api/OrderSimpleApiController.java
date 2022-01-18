@@ -5,6 +5,8 @@ import jpabook.jpashop.domain.Order;
 import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryDto;
+import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class OrderSimpleApiController {
 
     private final OrderRepository orderRepository;
+    private final OrderSimpleQueryRepository orderSimpleQueryRepository;
 
     // API 스펙 변경의 문제뿐만아니라 성능상으로도 문제가 발생한다.
     // FORCE_LAZY_LOADING 때문에 필요하지 않은 데이터들도 모두 가져오기 때문에 불필요한 쿼리들이 발생한다.
@@ -73,6 +76,18 @@ public class OrderSimpleApiController {
 
         return result;
     }
+
+    @GetMapping("/api/v4/simple-orders")
+    public List<OrderSimpleQueryDto> orderV4() {
+        List<OrderSimpleQueryDto> orderDtos = orderSimpleQueryRepository.findOrderDtos();
+        return orderDtos;
+    }
+    // v3와 v4는 우열을 가리기 어렵다.
+    // v3는 모두 가져오기 때문에 여러 API에서 재사용할 수 있다.
+    // 하지만 v4는 해당 DTO에 fit하게 만들어졌기 때문에 재사용성이 낮다. 그리고 DTO로 조회한 것은 내용을 변경할 수 없다.
+    // v4는 코드가 좀 더 지저분하다. API 스펙에 맞춰진다. -> 논리적으로 계층이 깨진다. trade off
+    // 대부분의 리소스는 where 절에서 소모되기 때문에 대부분의 경우 성능차이가 미미하다. select 필드가 클 때 고려해야한다.
+    // Repository -> Entity의 조회에 사용한다.
 
     @Data
     static class SimpleOrderDto {

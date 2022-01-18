@@ -7,8 +7,6 @@ import org.springframework.util.StringUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -73,34 +71,6 @@ public class OrderRepository {
         return query.getResultList();
     }
 
-    /**
-     * JPA Criteria
-     */
-    public List<Order> findAllByCriteria(OrderSearch orderSearch) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Order> cq = cb.createQuery(Order.class);
-        Root<Order> o = cq.from(Order.class);
-        Join<Object, Object> m = o.join("member", JoinType.INNER);
-
-        List<Predicate> criteria = new ArrayList<>();
-
-        //주문 상태 검색
-        if (orderSearch.getOrderStatus() != null) {
-            Predicate status = cb.equal(o.get("status"), orderSearch.getOrderStatus());
-            criteria.add(status);
-        }
-        //회원 이름 검색
-        if (StringUtils.hasText(orderSearch.getMemberName())) {
-            Predicate name =
-                    cb.like(m.<String>get("name"), "%" + orderSearch.getMemberName() + "%");
-            criteria.add(name);
-        }
-
-        cq.where(cb.and(criteria.toArray(new Predicate[criteria.size()])));
-        TypedQuery<Order> query = em.createQuery(cq).setMaxResults(1000);
-        return query.getResultList();
-    }
-
     // fetch join을 이용한 N+1 문제 해결
     // Order, Member, Delivery를 join해서 한번에 가져온다.
     // fetch 는 JPA만 있는 문법이다.
@@ -115,24 +85,6 @@ public class OrderRepository {
 
     }
 
-    public List<Order> findAllWithItem() {
-        return em.createQuery(
-                "select distinct o from Order o" +
-                        " join fetch o.member m" +
-                        " join fetch o.delivery d" +
-                        " join fetch o.orderItems oi" +
-                        " join fetch oi.item i", Order.class)
-                .getResultList();
-    }
 
-    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
-        return em.createQuery(
-                "select o from Order o" +
-                        " join fetch o.member m" +
-                        " join fetch o.delivery d", Order.class)
-                .setFirstResult(offset)
-                .setMaxResults(limit)
-                .getResultList();
-    }
 }
 
