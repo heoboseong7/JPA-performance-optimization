@@ -94,6 +94,11 @@ public class OrderApiController {
         return orderQueryRepository.findOrderQueryDtos();
     }
 
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> ordersV5() {
+        return orderQueryRepository.findAllByDto_optimization();
+    }
+
     @Data // 보통 그냥 쓰지만 해주는게 너무 많아서 안쓰는게 좋은 경우도 있다.
     static class OrderDto {
 
