@@ -110,5 +110,16 @@ public class OrderRepository {
                 .setMaxResults(100)
                 .getResultList();
     }
+
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        // ToOne 관계는 페치 조인으로 잡는 것이 좋다.
+        return em.createQuery(
+                "select o from Order o" +
+                        " join fetch o.member m" +
+                        " join fetch o.delivery d", Order.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .getResultList();
+    }
 }
 
