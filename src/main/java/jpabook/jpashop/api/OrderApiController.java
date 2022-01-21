@@ -56,6 +56,22 @@ public class OrderApiController {
         return result;
     }
 
+    @GetMapping("/api/v3/orders")
+    public List<OrderDto> ordersV3() {
+        // V2와 V3는 코드가 동일하다. V2에서 findAllByString 만 수정하면 V3가 된다.
+        List<Order> orders = orderRepository.findAllWithThem();
+        for (Order order : orders) {
+            // JPA 입장에서 이 데이터를 줄여서 줘야할 지 판단하기 어렵기 때문에 모두 제공한다.
+            // 레퍼런스까지 같은 값이 2개씩 생긴다.
+            System.out.println("order ref= " + order + " id =" + order.getId());
+        }
+        List<OrderDto> result = orders.stream()
+                .map(OrderDto::new)
+                .collect(Collectors.toList());
+
+        return result;
+    }
+
     @Data // 보통 그냥 쓰지만 해주는게 너무 많아서 안쓰는게 좋은 경우도 있다.
     static class OrderDto {
 
