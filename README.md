@@ -1,3 +1,3 @@
 # JPA-performance-optimization
 
-JPA 성능 
+JPA 성능 최적화
